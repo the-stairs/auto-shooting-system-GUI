@@ -1,5 +1,7 @@
+import GUI from "./pages/GUI";
+
 function App() {
-  return <></>;
+  return <GUI />;
 }
 
 export default App;
