@@ -22,9 +22,14 @@ declare namespace NodeJS {
 }
 
 // Used in Renderer process, expose in `preload.ts`
+export type SerialPortInfo = {
+  path: string;
+  manufacturer: string;
+  serialNumber: string;
+};
+
 interface Window {
-  ipcRenderer: import("electron").IpcRenderer;
-  serialAPI: {
-    listPorts: () => Promise<SerialPortInfo[]>;
+  ipcRenderer: import("electron").IpcRenderer & {
+    listSerialPorts: () => Promise<SerialPortInfo[]>;
   };
 }

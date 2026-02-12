@@ -9,8 +9,20 @@ export default defineConfig({
     react(),
     electron({
       main: {
-        // Shortcut of `build.lib.entry`.
         entry: "electron/main.ts",
+        // type: "module"이어도 메인만 CJS로 빌드 → __dirname 사용 가능, serialport 등 호환
+        vite: {
+          build: {
+            lib: {
+              entry: "electron/main.ts",
+              formats: ["cjs"],
+              fileName: () => "main.cjs",
+            },
+            rollupOptions: {
+              external: ["serialport"],
+            },
+          },
+        },
       },
       preload: {
         // Shortcut of `build.rollupOptions.input`.
