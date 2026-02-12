@@ -119,14 +119,32 @@ export function useActions() {
     addLog("연결 해제됨");
   }, []);
 
-  const refreshPorts = useCallback(() => {
-    // Simulate port detection
-    const fakePorts = ["COM3", "COM4", "COM5", "/dev/ttyUSB0"];
-    setState({ ports: fakePorts });
-    if (fakePorts.length > 0) {
-      setState({ selectedPort: fakePorts[0] });
+  const refreshPorts = useCallback(async () => {
+    try {
+      const listSerialPorts = (
+        window as unknown as {
+          ipcRenderer: { listSerialPorts: () => Promise<{ path: string }[]> };
+        }
+      ).ipcRenderer?.listSerialPorts;
+      if (!listSerialPorts) {
+        addLog("포트 목록 API를 사용할 수 없습니다 (Electron 환경이 아님)");
+        return;
+      }
+      const list = await listSerialPorts();
+      const paths = list.map((p: { path: string }) => p.path);
+      setState({ ports: paths });
+      const current = getState();
+      const stillExists =
+        current.selectedPort && paths.includes(current.selectedPort);
+      if (paths.length > 0 && !stillExists) {
+        setState({ selectedPort: paths[0] });
+      }
+      addLog(`포트 목록 갱신됨 (${paths.length}개)`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      addLog(`포트 목록 조회 실패: ${msg}`);
+      setState({ ports: [] });
     }
-    addLog("포트 목록 갱신됨");
   }, []);
 
   const sendCommand = useCallback((cmd: string) => {
