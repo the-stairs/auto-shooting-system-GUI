@@ -17,7 +17,6 @@ import {
   Download,
   Upload,
   FileText,
-  OctagonX,
 } from "lucide-react";
 
 const AUTO_ORDER_KEYS = ["CAM_HEIGHT", "CAM_LOWER", "TABLE_HEIGHT"] as const;
@@ -66,15 +65,6 @@ export function TopBar() {
         >
           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
           전체초기화
-        </Button>
-        <Button
-          size="sm"
-          variant="destructive"
-          onClick={actions.emergencyStop}
-          disabled={!state.connected}
-        >
-          <OctagonX className="mr-1.5 h-3.5 w-3.5" />
-          긴급 정지
         </Button>
       </div>
 

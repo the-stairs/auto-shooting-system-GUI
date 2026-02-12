@@ -266,7 +266,10 @@ export function useActions() {
   const emergencyStop = useCallback(async () => {
     const ipc = window.ipcRenderer;
     if (ipc?.writeSerial) {
-      await ipc.writeSerial("ESTOP");
+      const res = await ipc.writeSerial("STOP");
+      if (!res.ok) {
+        addLog(`전송 실패: ${res.error ?? "알 수 없음"}`);
+      }
     }
     setState({ systemStatus: "stopped" });
     addLog("긴급 정지!");

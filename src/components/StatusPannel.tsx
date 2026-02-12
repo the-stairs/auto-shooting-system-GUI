@@ -1,18 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAppState } from "@/lib/store";
+import { useActions, useAppState } from "@/lib/store";
 import {
   Activity,
   Wifi,
   WifiOff,
   CircleCheck,
   CircleAlert,
-  CirclePause,
   Loader2,
+  OctagonX,
 } from "lucide-react";
+import { Button } from "./ui/button";
 
 export function StatusPanel() {
   const state = useAppState();
+  const actions = useActions();
 
   const statusConfig = {
     ready: {
@@ -67,9 +69,9 @@ export function StatusPanel() {
           </span>
         </div>
 
-        {/* Connection & Feature Status */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2 rounded-md border border-border p-3">
+        {/* Connection Status & Emergency Stop (가로 배치) */}
+        <div className="flex gap-3">
+          <div className="flex flex-1 items-center gap-2 rounded-md border border-border p-3">
             {state.connected ? (
               <Wifi className="h-4 w-4 text-success" />
             ) : (
@@ -86,19 +88,26 @@ export function StatusPanel() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-md border border-border p-3">
-            <CirclePause className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <p className="text-xs font-medium text-foreground">
-                턴테이블 회전
-              </p>
-              <p className="text-xs text-muted-foreground">Disabled</p>
-            </div>
+
+          <div className="flex flex-1 items-center justify-between rounded-md border border-destructive/50 bg-destructive/5 px-3 py-2">
+            <span className="text-xs font-medium text-destructive">
+              긴급 정지
+            </span>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={actions.emergencyStop}
+              disabled={state.systemStatus !== "running"}
+              className="gap-1.5"
+            >
+              <OctagonX className="h-3.5 w-3.5" />
+              정지
+            </Button>
           </div>
         </div>
 
         {/* Log Area */}
-        <div className="flex max-h-64 flex-1 flex-col overflow-hidden rounded-md border border-border">
+        <div className="flex max-h-64 flex-col overflow-hidden rounded-md border border-border">
           <div className="border-b border-border bg-muted px-3 py-1.5">
             <span className="text-xs font-medium text-muted-foreground">
               Activity Log
