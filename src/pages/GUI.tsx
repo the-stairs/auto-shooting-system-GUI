@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { TopBar } from "../components/Topbar";
 import { UnitPanel } from "../components/UnitPannel";
 import { StatusPanel } from "../components/StatusPannel";
+import { initSerialListener } from "../lib/store";
 
 const UNIT_KEYS = [
   { key: "CAM_HEIGHT", index: 1 },
@@ -8,7 +10,12 @@ const UNIT_KEYS = [
   { key: "TABLE_HEIGHT", index: 3 },
 ];
 
-export default function Page() {
+export default function GUI() {
+  useEffect(() => {
+    const cleanup = initSerialListener();
+    return cleanup;
+  }, []);
+
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}

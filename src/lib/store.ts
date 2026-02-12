@@ -102,6 +102,32 @@ export function addLog(message: string) {
   emitChange();
 }
 
+const SERIAL_LINE_REG = /^(CAM_HEIGHT|CAM_LOWER|TABLE_HEIGHT)=([\d.-]+)/;
+
+function handleSerialLine(line: string) {
+  const m = line.match(SERIAL_LINE_REG);
+  if (!m) return;
+  const [, key, value] = m;
+  const num = parseFloat(value);
+  if (Number.isNaN(num)) return;
+  if (getState().units[key]) {
+    updateUnit(key, { currentValue: num });
+  }
+}
+
+/**
+ * 시리얼 수신 라인 구독. 앱 마운트 시 한 번 호출하고 반환된 cleanup을 unmount 시 호출.
+ */
+export function initSerialListener(): () => void {
+  const ipc = window.ipcRenderer;
+  if (!ipc?.on) return () => {};
+  const handler = (_: unknown, line: string) => handleSerialLine(line.trim());
+  ipc.on("serial:data", handler);
+  return () => {
+    ipc.off("serial:data", handler);
+  };
+}
+
 // --- Hooks ---
 export function useAppState(): AppState {
   return useSyncExternalStore(subscribe, getState, getState);
@@ -250,17 +276,15 @@ export function useActions() {
       }
     }
 
-    // Simulate running
+    // 시리얼 응답(CAM_HEIGHT=, CAM_LOWER=, TABLE_HEIGHT=)으로 updateUnit 됨.
+    // 60초 후에도 running이면 안전을 위해 ready로 복귀
     setTimeout(() => {
       const current = getState();
       if (current.systemStatus === "running") {
-        updateUnit(k1, { currentValue: v1 });
-        updateUnit(k2, { currentValue: v2 });
-        updateUnit(k3, { currentValue: v3 });
         setState({ systemStatus: "ready" });
-        addLog("자동운전 완료");
+        addLog("자동운전 타임아웃 (60초)");
       }
-    }, 3000);
+    }, 60_000);
   }, []);
 
   const emergencyStop = useCallback(async () => {

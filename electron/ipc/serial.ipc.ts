@@ -1,9 +1,10 @@
-import { ipcMain } from "electron";
+import { ipcMain, BrowserWindow } from "electron";
 import { SerialPort } from "serialport";
 
 const DEFAULT_BAUD = 9600;
 
 let activePort: SerialPort | null = null;
+let lineBuffer = "";
 
 type SerialPortInfo = {
   path: string;
@@ -43,6 +44,23 @@ ipcMain.handle("serial:connect", async (_event, path: string) => {
     await new Promise<void>((resolve, reject) => {
       activePort!.open((err) => (err ? reject(err) : resolve()));
     });
+
+    lineBuffer = "";
+    activePort.on("data", (chunk: Buffer) => {
+      lineBuffer += chunk.toString("utf8");
+      const lines = lineBuffer.split(/\r?\n/);
+      lineBuffer = lines.pop() ?? "";
+      const win = BrowserWindow.getAllWindows()[0];
+      if (win?.webContents && !win.isDestroyed()) {
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.length > 0) {
+            win.webContents.send("serial:data", trimmed);
+          }
+        }
+      }
+    });
+
     return { ok: true };
   } catch (err) {
     activePort = null;
@@ -57,10 +75,12 @@ ipcMain.handle("serial:connect", async (_event, path: string) => {
 ipcMain.handle("serial:disconnect", async () => {
   if (!activePort) return { ok: true };
   try {
+    activePort.removeAllListeners("data");
     await new Promise<void>((resolve, reject) => {
       activePort!.close((err) => (err ? reject(err) : resolve()));
     });
     activePort = null;
+    lineBuffer = "";
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
