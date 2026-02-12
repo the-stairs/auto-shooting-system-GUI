@@ -86,7 +86,6 @@ export function useActions() {
 
   const initUnit = useCallback(async (key: string) => {
     setAxisStatus(key, "moving");
-    updateUnit(key, { currentValue: 0 });
     const s = getState();
     const label = s.units[key]?.label ?? key;
     addLog(`${label} 초기화`);
@@ -104,9 +103,6 @@ export function useActions() {
 
   const initAll = useCallback(async () => {
     resetAllAxisStatus("moving");
-    for (const key of Object.keys(getState().units)) {
-      updateUnit(key, { currentValue: 0 });
-    }
     addLog("전체 초기화");
     const s = getState();
     if (s.connected) {
@@ -181,6 +177,23 @@ export function useActions() {
     }
   }, []);
 
+  const resetBoard = useCallback(async () => {
+    const s = getState();
+    if (!s.connected) {
+      addLog("연결되지 않음 - RESET 명령 무시됨");
+      return;
+    }
+    try {
+      await ipcWriteSerial("RESET");
+      resetAllAxisStatus("idle");
+      setState({ systemStatus: "ready" });
+      addLog("보드 리셋 명령 전송");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      addLog(`RESET 전송 실패: ${msg}`);
+    }
+  }, []);
+
   const setAutoOrder = useCallback((order: [string, string, string]) => {
     setState({ autoOrder: order });
   }, []);
@@ -235,9 +248,9 @@ export function useActions() {
     sendUnitValue,
     runAutoSequence,
     emergencyStop,
+    resetBoard,
     setAutoOrder,
     saveSettings,
     loadSettings,
   };
 }
-

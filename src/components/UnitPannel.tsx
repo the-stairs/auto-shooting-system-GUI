@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppState, useActions, updateUnit } from "@/lib/store";
-import { RotateCcw, Send, Crosshair, Loader2 } from "lucide-react";
+import { RotateCcw, Send, Loader2 } from "lucide-react";
 
 type UnitPanelProps = {
   unitKey: string;
@@ -76,16 +76,6 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           >
             <RotateCcw className="h-3.5 w-3.5" />
             초기화
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => actions.sendUnitValue(unitKey)}
-            disabled={!state.connected || isRunning || isAxisMoving}
-            className="gap-1.5"
-          >
-            <Crosshair className="h-3.5 w-3.5" />
-            자동 위치
           </Button>
         </div>
 
