@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -6,12 +7,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAppState, useActions, setState } from "@/lib/store";
 import {
   Play,
   RotateCcw,
   RefreshCw,
-  //   Plug,
-  //   Unplug,
+  Plug,
+  Unplug,
   Download,
   Upload,
   FileText,
@@ -26,14 +28,30 @@ const DISPLAY_NAMES: Record<string, string> = {
 };
 
 export function TopBar() {
+  const state = useAppState();
+  const actions = useActions();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLoadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      actions.loadSettings(file);
+    }
+    e.target.value = "";
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3">
       {/* Action Buttons */}
       <div className="flex items-center gap-2">
         <Button
           size="sm"
-          onClick={() => {}}
-          disabled={false}
+          onClick={actions.runAutoSequence}
+          disabled={!state.connected || state.systemStatus === "running"}
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
@@ -42,8 +60,8 @@ export function TopBar() {
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => {}}
-          disabled={false}
+          onClick={actions.initAll}
+          disabled={!state.connected}
         >
           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
           전체초기화
@@ -51,8 +69,8 @@ export function TopBar() {
         <Button
           size="sm"
           variant="destructive"
-          onClick={() => {}}
-          disabled={false}
+          onClick={actions.emergencyStop}
+          disabled={!state.connected}
         >
           <OctagonX className="mr-1.5 h-3.5 w-3.5" />
           긴급 정지
@@ -68,9 +86,11 @@ export function TopBar() {
         {[0, 1, 2].map((i) => (
           <Select
             key={i}
-            value={""}
-            onValueChange={(val: string) => {
-              console.log(val);
+            value={state.autoOrder[i]}
+            onValueChange={(val) => {
+              const newOrder = [...state.autoOrder] as [string, string, string];
+              newOrder[i] = val;
+              actions.setAutoOrder(newOrder);
             }}
           >
             <SelectTrigger className="h-8 w-28 text-xs">
@@ -94,17 +114,15 @@ export function TopBar() {
       <div className="flex items-center gap-1.5">
         <span className="text-xs text-muted-foreground">Port:</span>
         <Select
-          value={""}
-          onValueChange={(val: string) => {
-            console.log(val);
-          }}
-          disabled={false}
+          value={state.selectedPort}
+          onValueChange={(val) => setState({ selectedPort: val })}
+          disabled={state.connected}
         >
           <SelectTrigger className="h-8 w-36 text-xs">
             <SelectValue placeholder="포트 선택" />
           </SelectTrigger>
           <SelectContent>
-            {["COM1", "COM2", "COM3"].map((p) => (
+            {state.ports.map((p) => (
               <SelectItem key={p} value={p} className="text-xs">
                 {p}
               </SelectItem>
@@ -115,17 +133,17 @@ export function TopBar() {
           size="icon"
           variant="ghost"
           className="h-8 w-8"
-          onClick={() => {}}
-          disabled={false}
+          onClick={actions.refreshPorts}
+          disabled={state.connected}
         >
           <RefreshCw className="h-3.5 w-3.5" />
           <span className="sr-only">포트 갱신</span>
         </Button>
-        {/* {false ? (
+        {state.connected ? (
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {}}
+            onClick={actions.disconnect}
             className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent"
           >
             <Unplug className="mr-1.5 h-3.5 w-3.5" />
@@ -135,15 +153,17 @@ export function TopBar() {
           <Button
             size="sm"
             onClick={() => {
-              console.log("connect");
+              if (state.selectedPort) {
+                actions.connect(state.selectedPort);
+              }
             }}
-            disabled={false}
+            disabled={!state.selectedPort}
             className="bg-success text-success-foreground hover:bg-success/90"
           >
             <Plug className="mr-1.5 h-3.5 w-3.5" />
             연결
           </Button>
-        )} */}
+        )}
       </div>
 
       {/* Separator */}
@@ -151,24 +171,25 @@ export function TopBar() {
 
       {/* File Operations */}
       <div className="flex items-center gap-1.5">
-        <Button size="sm" variant="ghost" onClick={() => {}}>
+        <Button size="sm" variant="ghost" onClick={handleLoadClick}>
           <Upload className="mr-1.5 h-3.5 w-3.5" />
           불러오기
         </Button>
         <input
+          ref={fileInputRef}
           type="file"
           accept=".json,.txt"
           className="hidden"
-          onChange={() => {}}
+          onChange={handleFileChange}
         />
-        <Button size="sm" variant="ghost" onClick={() => {}}>
+        <Button size="sm" variant="ghost" onClick={actions.saveSettings}>
           <Download className="mr-1.5 h-3.5 w-3.5" />
           저장
         </Button>
-        {false && (
+        {state.fileName && (
           <span className="flex items-center gap-1 text-xs text-primary">
             <FileText className="h-3 w-3" />
-            {"fileName"}
+            {state.fileName}
           </span>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAppState, useActions, updateUnit } from "@/lib/store";
 import { RotateCcw, Send, Crosshair } from "lucide-react";
 
 interface UnitPanelProps {
@@ -9,6 +10,14 @@ interface UnitPanelProps {
 }
 
 export function UnitPanel({ unitKey, index }: UnitPanelProps) {
+  const state = useAppState();
+  const actions = useActions();
+  const unit = state.units[unitKey];
+
+  if (!unit) return null;
+
+  const isRunning = state.systemStatus === "running";
+
   return (
     <Card className="border-border bg-card">
       <CardHeader className="pb-3">
@@ -16,9 +25,9 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-xs font-bold text-primary-foreground">
             {index}
           </span>
-          {"label"}
+          {unit.label}
           <span className="ml-auto text-xs font-normal text-muted-foreground">
-            ("range")
+            ({unit.range})
           </span>
         </CardTitle>
       </CardHeader>
@@ -31,7 +40,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           <div className="relative flex-1">
             <Input
               readOnly
-              value={"currentValue"}
+              value={unit.currentValue}
               className="border-border bg-muted font-mono text-center text-sm text-foreground"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -41,8 +50,8 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {}}
-            disabled={false}
+            onClick={() => actions.initUnit(unitKey)}
+            disabled={!state.connected || isRunning}
             className="gap-1.5"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -51,8 +60,8 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => {}}
-            disabled={false}
+            onClick={() => actions.sendUnitValue(unitKey)}
+            disabled={!state.connected || isRunning}
             className="gap-1.5"
           >
             <Crosshair className="h-3.5 w-3.5" />
@@ -67,10 +76,10 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           </label>
           <div className="relative flex-1">
             <Input
-              value={"setValue"}
-              onChange={(e) => {
-                console.log(e.target.value);
-              }}
+              value={unit.setValue}
+              onChange={(e) =>
+                updateUnit(unitKey, { setValue: e.target.value })
+              }
               className="border-border bg-secondary font-mono text-center text-sm text-foreground"
               placeholder="0000"
             />
@@ -80,8 +89,8 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           </div>
           <Button
             size="sm"
-            onClick={() => {}}
-            disabled={false}
+            onClick={() => actions.sendUnitValue(unitKey)}
+            disabled={!state.connected || isRunning}
             className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Send className="h-3.5 w-3.5" />
@@ -97,7 +106,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
               className="h-full rounded-full bg-primary/70 transition-all duration-500"
               style={{
                 width: `${Math.min(
-                  (Number.parseInt("currentValue") /
+                  (Number.parseInt(unit.currentValue) /
                     (unitKey === "CAM_LOWER" ? 1800 : 400)) *
                     100,
                   100
