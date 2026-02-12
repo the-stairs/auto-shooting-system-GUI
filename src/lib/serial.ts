@@ -22,6 +22,7 @@ type IpcLike = {
     channel: string,
     listener: (event: unknown, data: string) => void
   ) => void;
+  send?: (channel: string, ...args: unknown[]) => void;
 };
 
 function getIpc(): IpcLike | undefined {
@@ -82,9 +83,23 @@ export async function ipcWriteSerial(data: string) {
 const SERIAL_VALUE_REG = /^(CAM_HEIGHT|CAM_LOWER|TABLE_HEIGHT)=([\d.-]+)/;
 const SERIAL_DONE_REG = /^DONE\s+(CAM_HEIGHT|CAM_LOWER|TABLE_HEIGHT)=([\d.-]+)/;
 const SERIAL_DONE_ALL_REG = /^DONE_ALL\b(.*)?$/;
+const SERIAL_QUIT_REG = /^QUIT\b(.*)?$/;
 
 function handleSerialLine(line: string) {
   const trimmed = line.trim();
+
+  // 종료 신호: QUIT
+  if (SERIAL_QUIT_REG.test(trimmed)) {
+    const state = getState();
+    if (state.exitPending) {
+      addLog(`종료 신호 수신: ${trimmed}`);
+      const ipc = getIpc();
+      ipc?.send?.("app:quit");
+    } else {
+      addLog(`QUIT 수신됐지만 exitPending 아님: ${trimmed}`);
+    }
+    return;
+  }
 
   // 단일 축 완료: DONE CAM_HEIGHT=123.4
   const doneMatch = trimmed.match(SERIAL_DONE_REG);

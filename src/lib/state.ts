@@ -20,6 +20,7 @@ export interface AppState {
   fileName: string | null;
   systemStatus: "ready" | "running" | "stopped" | "error";
   logs: string[];
+  exitPending?: boolean;
 }
 
 // --- Initial state ---
@@ -60,6 +61,7 @@ const initialState: AppState = {
   fileName: null,
   systemStatus: "ready",
   logs: [],
+  exitPending: false,
 };
 
 // --- Store core ---

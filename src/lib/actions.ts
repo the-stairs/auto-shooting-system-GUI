@@ -177,6 +177,29 @@ export function useActions() {
     }
   }, []);
 
+  const quitApp = useCallback(async () => {
+    const s = getState();
+    // 연결 안 되어 있으면 바로 창 닫기
+    if (!s.connected) {
+      window.close();
+      return;
+    }
+    // 이미 종료 대기 중이면 중복 요청 방지
+    if (s.exitPending) {
+      addLog("종료 대기 중입니다. 잠시만 기다려 주세요.");
+      return;
+    }
+    try {
+      setState({ exitPending: true });
+      addLog("종료 요청: QUIT_HOME 전송");
+      await ipcWriteSerial("QUIT_HOME");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      addLog(`QUIT_HOME 전송 실패: ${msg}`);
+      setState({ exitPending: false });
+    }
+  }, []);
+
   const resetBoard = useCallback(async () => {
     const s = getState();
     if (!s.connected) {
@@ -248,6 +271,7 @@ export function useActions() {
     sendUnitValue,
     runAutoSequence,
     emergencyStop,
+    quitApp,
     resetBoard,
     setAutoOrder,
     saveSettings,

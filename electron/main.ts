@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 
 import "./ipc/serial.ipc";
@@ -64,3 +64,7 @@ app.on("activate", () => {
 });
 
 app.whenReady().then(createWindow);
+
+ipcMain.on("app:quit", () => {
+  app.quit();
+});
