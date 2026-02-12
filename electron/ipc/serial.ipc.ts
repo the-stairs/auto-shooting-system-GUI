@@ -35,7 +35,11 @@ ipcMain.handle("serial:connect", async (_event, path: string) => {
     return { ok: false, error: "이미 연결되어 있습니다." };
   }
   try {
-    activePort = new SerialPort({ path, baudRate: DEFAULT_BAUD });
+    activePort = new SerialPort({
+      path,
+      baudRate: DEFAULT_BAUD,
+      autoOpen: false, // 생성 시 자동 open 비활성화
+    });
     await new Promise<void>((resolve, reject) => {
       activePort!.open((err) => (err ? reject(err) : resolve()));
     });
