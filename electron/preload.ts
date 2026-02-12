@@ -20,4 +20,16 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
     return ipcRenderer.invoke(channel, ...omit);
   },
   listSerialPorts: () => ipcRenderer.invoke("serial:list-ports"),
+  connectSerial: (path: string) =>
+    ipcRenderer.invoke("serial:connect", path) as Promise<{
+      ok: boolean;
+      error?: string;
+    }>,
+  disconnectSerial: () =>
+    ipcRenderer.invoke("serial:disconnect") as Promise<{ ok: boolean }>,
+  writeSerial: (data: string) =>
+    ipcRenderer.invoke("serial:write", data) as Promise<{
+      ok: boolean;
+      error?: string;
+    }>,
 });

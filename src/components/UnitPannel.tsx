@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppState, useActions, updateUnit } from "@/lib/store";
 import { RotateCcw, Send, Crosshair } from "lucide-react";
 
-interface UnitPanelProps {
+type UnitPanelProps = {
   unitKey: string;
   index: number;
-}
+};
+
+const SAFETY_VALUE = 1;
 
 export function UnitPanel({ unitKey, index }: UnitPanelProps) {
   const state = useAppState();
@@ -17,6 +19,15 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
   if (!unit) return null;
 
   const isRunning = state.systemStatus === "running";
+  const maxValue = unit.max - SAFETY_VALUE;
+
+  const onChangeSetValue = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/^0+/, "") || "0";
+    const num = parseInt(raw, 10);
+    if (!Number.isNaN(num) && num >= unit.min && num <= maxValue) {
+      updateUnit(unitKey, { setValue: num });
+    }
+  };
 
   return (
     <Card className="border-border bg-card">
@@ -27,7 +38,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           </span>
           {unit.label}
           <span className="ml-auto text-xs font-normal text-muted-foreground">
-            ({unit.range})
+            ({unit.min}-{unit.max}mm)
           </span>
         </CardTitle>
       </CardHeader>
@@ -76,12 +87,13 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           </label>
           <div className="relative flex-1">
             <Input
-              value={unit.setValue}
-              onChange={(e) =>
-                updateUnit(unitKey, { setValue: e.target.value })
-              }
+              value={unit.setValue.toString()}
+              type="number"
+              min={unit.min}
+              max={maxValue}
+              onChange={onChangeSetValue}
               className="border-border bg-secondary font-mono text-center text-sm text-foreground"
-              placeholder="0000"
+              placeholder={"0"}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
               mm
@@ -106,8 +118,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
               className="h-full rounded-full bg-primary/70 transition-all duration-500"
               style={{
                 width: `${Math.min(
-                  (Number.parseInt(unit.currentValue) /
-                    (unitKey === "CAM_LOWER" ? 1800 : 400)) *
+                  (unit.currentValue / (unitKey === "CAM_LOWER" ? 1800 : 400)) *
                     100,
                   100
                 )}%`,

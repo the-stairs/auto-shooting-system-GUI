@@ -98,7 +98,7 @@ export function StatusPanel() {
         </div>
 
         {/* Log Area */}
-        <div className="flex flex-1 flex-col overflow-hidden rounded-md border border-border">
+        <div className="flex max-h-64 flex-1 flex-col overflow-hidden rounded-md border border-border">
           <div className="border-b border-border bg-muted px-3 py-1.5">
             <span className="text-xs font-medium text-muted-foreground">
               Activity Log

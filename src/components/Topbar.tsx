@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 const AUTO_ORDER_KEYS = ["CAM_HEIGHT", "CAM_LOWER", "TABLE_HEIGHT"] as const;
+
 const DISPLAY_NAMES: Record<string, string> = {
   CAM_HEIGHT: "카메라 높이",
   CAM_LOWER: "카메라 하부",

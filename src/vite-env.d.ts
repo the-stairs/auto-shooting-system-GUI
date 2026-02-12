@@ -9,5 +9,8 @@ interface SerialPortInfo {
 interface Window {
   ipcRenderer: import("electron").IpcRenderer & {
     listSerialPorts: () => Promise<SerialPortInfo[]>;
+    connectSerial: (path: string) => Promise<{ ok: boolean; error?: string }>;
+    disconnectSerial: () => Promise<{ ok: boolean }>;
+    writeSerial: (data: string) => Promise<{ ok: boolean; error?: string }>;
   };
 }

@@ -4,9 +4,10 @@ import { useSyncExternalStore, useCallback } from "react";
 export interface UnitState {
   label: string;
   key: string;
-  currentValue: string;
-  setValue: string;
-  range: string;
+  currentValue: number;
+  setValue: number;
+  min: number;
+  max: number;
 }
 
 export interface AppState {
@@ -29,23 +30,26 @@ const initialState: AppState = {
     CAM_HEIGHT: {
       label: "카메라 높이",
       key: "CAM_HEIGHT",
-      currentValue: "0000",
-      setValue: "0000",
-      range: "0~400mm",
+      currentValue: 0,
+      setValue: 0,
+      min: 0,
+      max: 400,
     },
     CAM_LOWER: {
       label: "카메라 하부 위치",
       key: "CAM_LOWER",
-      currentValue: "0000",
-      setValue: "0000",
-      range: "0~1800mm",
+      currentValue: 0,
+      setValue: 0,
+      min: 0,
+      max: 1800,
     },
     TABLE_HEIGHT: {
       label: "턴테이블 높이",
       key: "TABLE_HEIGHT",
-      currentValue: "0000",
-      setValue: "0000",
-      range: "0~400mm",
+      currentValue: 0,
+      setValue: 0,
+      min: 0,
+      max: 400,
     },
   },
   autoOrder: ["CAM_HEIGHT", "CAM_LOWER", "TABLE_HEIGHT"],
@@ -109,12 +113,28 @@ export function useUnit(key: string) {
 }
 
 export function useActions() {
-  const connect = useCallback((port: string) => {
+  const connect = useCallback(async (port: string) => {
+    const ipc = window.ipcRenderer;
+    if (!ipc?.connectSerial) {
+      addLog("시리얼 연결 API를 사용할 수 없습니다 (Electron 환경이 아님)");
+      return;
+    }
+    const result = await ipc.connectSerial(port);
+    if (!result.ok) {
+      addLog(`연결 실패: ${result.error ?? "알 수 없음"}`);
+      return;
+    }
     setState({ connected: true, selectedPort: port, systemStatus: "ready" });
     addLog(`포트 ${port} 연결됨`);
   }, []);
 
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback(async () => {
+    const ipc = (
+      window as unknown as {
+        ipcRenderer?: { disconnectSerial: () => Promise<{ ok: boolean }> };
+      }
+    ).ipcRenderer;
+    if (ipc?.disconnectSerial) await ipc.disconnectSerial();
     setState({ connected: false, selectedPort: "", systemStatus: "ready" });
     addLog("연결 해제됨");
   }, []);
@@ -147,61 +167,88 @@ export function useActions() {
     }
   }, []);
 
-  const sendCommand = useCallback((cmd: string) => {
+  const sendCommand = useCallback(async (cmd: string) => {
     const s = getState();
     if (!s.connected) {
       addLog("연결되지 않음 - 명령 무시됨");
       return;
     }
     addLog(`송신: ${cmd}`);
-  }, []);
-
-  const initUnit = useCallback((key: string) => {
-    updateUnit(key, { currentValue: "0000" });
-    const s = getState();
-    const label = s.units[key]?.label ?? key;
-    addLog(`${label} 초기화`);
-    const s2 = getState();
-    if (s2.connected) {
-      addLog(`송신: INIT_${key}`);
+    const ipc = window.ipcRenderer;
+    if (ipc?.writeSerial) {
+      const res = await ipc.writeSerial(cmd);
+      if (!res.ok) addLog(`전송 실패: ${res.error ?? "알 수 없음"}`);
     }
   }, []);
 
-  const initAll = useCallback(() => {
+  const initUnit = useCallback(async (key: string) => {
+    updateUnit(key, { currentValue: 0 });
+    const s = getState();
+    const label = s.units[key]?.label ?? key;
+    addLog(`${label} 초기화`);
+    if (s.connected) {
+      addLog(`송신: INIT_${key}`);
+      const ipc = window.ipcRenderer;
+      if (ipc?.writeSerial) {
+        const res = await ipc.writeSerial(`INIT_${key}`);
+        if (!res.ok) addLog(`전송 실패: ${res.error ?? "알 수 없음"}`);
+      }
+    }
+  }, []);
+
+  const initAll = useCallback(async () => {
     for (const key of Object.keys(getState().units)) {
-      updateUnit(key, { currentValue: "0000" });
+      updateUnit(key, { currentValue: 0 });
     }
     addLog("전체 초기화");
     const s = getState();
     if (s.connected) {
       addLog("송신: FULL_INIT");
+      const ipc = window.ipcRenderer;
+      if (ipc?.writeSerial) {
+        const res = await ipc.writeSerial("FULL_INIT");
+        if (!res.ok) addLog(`전송 실패: ${res.error ?? "알 수 없음"}`);
+      }
     }
   }, []);
 
-  const sendUnitValue = useCallback((key: string) => {
+  const sendUnitValue = useCallback(async (key: string) => {
     const s = getState();
     const unit = s.units[key];
     if (!unit) return;
-    if (!unit.setValue || unit.setValue.trim() === "") {
+    if (!unit.setValue && unit.setValue !== 0) {
       addLog(`${unit.label} 값을 입력하세요`);
       return;
     }
-    addLog(`송신: ${key}=${unit.setValue}`);
+    const cmd = `${key}=${unit.setValue}`;
+    addLog(`송신: ${cmd}`);
+    const ipc = window.ipcRenderer;
+    if (ipc?.writeSerial) {
+      const res = await ipc.writeSerial(cmd);
+      if (!res.ok) addLog(`전송 실패: ${res.error ?? "알 수 없음"}`);
+    }
   }, []);
 
-  const runAutoSequence = useCallback(() => {
+  const runAutoSequence = useCallback(async () => {
     const s = getState();
     const [k1, k2, k3] = s.autoOrder;
     if (k1 === k2 || k2 === k3 || k1 === k3) {
       addLog("자동운전 순서에서 축을 중복 선택할 수 없습니다");
       return;
     }
-    const v1 = s.units[k1]?.setValue ?? "0";
-    const v2 = s.units[k2]?.setValue ?? "0";
-    const v3 = s.units[k3]?.setValue ?? "0";
+    const v1 = s.units[k1]?.setValue ?? 0;
+    const v2 = s.units[k2]?.setValue ?? 0;
+    const v3 = s.units[k3]?.setValue ?? 0;
     const cmd = `AUTO=${k1}:${v1}/${k2}:${v2}/${k3}:${v3}`;
     setState({ systemStatus: "running" });
     addLog(`자동운전 시작: ${cmd}`);
+    const ipc = window.ipcRenderer;
+    if (ipc?.writeSerial) {
+      const res = await ipc.writeSerial(cmd);
+      if (!res.ok) {
+        addLog(`전송 실패: ${res.error ?? "알 수 없음"}`);
+      }
+    }
 
     // Simulate running
     setTimeout(() => {
@@ -216,7 +263,11 @@ export function useActions() {
     }, 3000);
   }, []);
 
-  const emergencyStop = useCallback(() => {
+  const emergencyStop = useCallback(async () => {
+    const ipc = window.ipcRenderer;
+    if (ipc?.writeSerial) {
+      await ipc.writeSerial("ESTOP");
+    }
     setState({ systemStatus: "stopped" });
     addLog("긴급 정지!");
   }, []);
@@ -229,7 +280,7 @@ export function useActions() {
     const s = getState();
     const data: Record<string, string> = {};
     for (const [key, unit] of Object.entries(s.units)) {
-      data[key] = unit.setValue;
+      data[key] = unit.setValue.toString();
     }
     const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], { type: "application/json" });
@@ -253,7 +304,7 @@ export function useActions() {
         >;
         for (const [key, value] of Object.entries(data)) {
           if (getState().units[key]) {
-            updateUnit(key, { setValue: value });
+            updateUnit(key, { setValue: Number(value) });
           }
         }
         setState({ fileName: file.name });
