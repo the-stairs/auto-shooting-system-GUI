@@ -1,4 +1,6 @@
 // --- Types ---
+export type AxisStatus = "idle" | "moving" | "done" | "error";
+
 export interface UnitState {
   label: string;
   key: string;
@@ -6,6 +8,7 @@ export interface UnitState {
   setValue: number;
   min: number;
   max: number;
+  status: AxisStatus;
 }
 
 export interface AppState {
@@ -32,6 +35,7 @@ const initialState: AppState = {
       setValue: 0,
       min: 0,
       max: 400,
+      status: "idle",
     },
     CAM_LOWER: {
       label: "카메라 하부 위치",
@@ -40,6 +44,7 @@ const initialState: AppState = {
       setValue: 0,
       min: 0,
       max: 1800,
+      status: "idle",
     },
     TABLE_HEIGHT: {
       label: "턴테이블 높이",
@@ -48,6 +53,7 @@ const initialState: AppState = {
       setValue: 0,
       min: 0,
       max: 400,
+      status: "idle",
     },
   },
   autoOrder: ["CAM_HEIGHT", "CAM_LOWER", "TABLE_HEIGHT"],
@@ -99,4 +105,30 @@ export function addLog(message: string) {
   };
   emitChange();
 }
+
+export function setAxisStatus(key: string, status: AxisStatus) {
+  const unit = state.units[key];
+  if (!unit) return;
+  state = {
+    ...state,
+    units: {
+      ...state.units,
+      [key]: { ...unit, status },
+    },
+  };
+  emitChange();
+}
+
+export function resetAllAxisStatus(status: AxisStatus = "idle") {
+  const nextUnits: Record<string, UnitState> = {};
+  for (const [key, unit] of Object.entries(state.units)) {
+    nextUnits[key] = { ...unit, status };
+  }
+  state = {
+    ...state,
+    units: nextUnits,
+  };
+  emitChange();
+}
+
 

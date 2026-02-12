@@ -6,6 +6,8 @@ import {
   setState,
   updateUnit,
   addLog,
+  setAxisStatus,
+  resetAllAxisStatus,
 } from "./state";
 import {
   ipcConnectSerial,
@@ -83,6 +85,7 @@ export function useActions() {
   }, []);
 
   const initUnit = useCallback(async (key: string) => {
+    setAxisStatus(key, "moving");
     updateUnit(key, { currentValue: 0 });
     const s = getState();
     const label = s.units[key]?.label ?? key;
@@ -100,6 +103,7 @@ export function useActions() {
   }, []);
 
   const initAll = useCallback(async () => {
+    resetAllAxisStatus("moving");
     for (const key of Object.keys(getState().units)) {
       updateUnit(key, { currentValue: 0 });
     }
@@ -126,6 +130,7 @@ export function useActions() {
       return;
     }
     const cmd = `${key}=${unit.setValue}`;
+    setAxisStatus(key, "moving");
     setState({ systemStatus: "running" });
     addLog(`송신: ${cmd}`);
     try {
@@ -148,6 +153,11 @@ export function useActions() {
     const v3 = s.units[k3]?.setValue ?? 0;
     const cmd = `AUTO=${k1}:${v1}/${k2}:${v2}/${k3}:${v3}`;
 
+    resetAllAxisStatus("idle");
+    setAxisStatus(k1, "moving");
+    setAxisStatus(k2, "moving");
+    setAxisStatus(k3, "moving");
+
     setState({ systemStatus: "running" });
     addLog(`자동운전 시작: ${cmd}`);
 
@@ -162,6 +172,7 @@ export function useActions() {
   const emergencyStop = useCallback(async () => {
     try {
       await ipcWriteSerial("STOP");
+      resetAllAxisStatus("idle");
       setState({ systemStatus: "stopped" });
       addLog("긴급 정지!");
     } catch (e) {

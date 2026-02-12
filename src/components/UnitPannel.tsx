@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppState, useActions, updateUnit } from "@/lib/store";
-import { RotateCcw, Send, Crosshair } from "lucide-react";
+import { RotateCcw, Send, Crosshair, Loader2 } from "lucide-react";
 
 type UnitPanelProps = {
   unitKey: string;
@@ -19,6 +19,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
   if (!unit) return null;
 
   const isRunning = state.systemStatus === "running";
+  const isAxisMoving = unit.status === "moving";
   const maxValue = unit.max - SAFETY_VALUE;
 
   const onChangeSetValue = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,7 +31,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
   };
 
   return (
-    <Card className="border-border bg-card">
+    <Card className="relative border-border bg-card">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-xs font-bold text-primary-foreground">
@@ -43,6 +44,14 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        {isAxisMoving && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>이동 중...</span>
+            </div>
+          </div>
+        )}
         {/* Current Value Row */}
         <div className="flex items-center gap-3">
           <label className="w-16 shrink-0 text-xs text-muted-foreground">
@@ -62,7 +71,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
             size="sm"
             variant="outline"
             onClick={() => actions.initUnit(unitKey)}
-            disabled={!state.connected || isRunning}
+            disabled={!state.connected || isRunning || isAxisMoving}
             className="gap-1.5"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -72,7 +81,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
             size="sm"
             variant="secondary"
             onClick={() => actions.sendUnitValue(unitKey)}
-            disabled={!state.connected || isRunning}
+            disabled={!state.connected || isRunning || isAxisMoving}
             className="gap-1.5"
           >
             <Crosshair className="h-3.5 w-3.5" />
@@ -94,6 +103,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
               onChange={onChangeSetValue}
               className="border-border bg-secondary font-mono text-center text-sm text-foreground"
               placeholder={"0"}
+              disabled={isAxisMoving}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
               mm
@@ -102,7 +112,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
           <Button
             size="sm"
             onClick={() => actions.sendUnitValue(unitKey)}
-            disabled={!state.connected || isRunning}
+            disabled={!state.connected || isRunning || isAxisMoving}
             className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Send className="h-3.5 w-3.5" />
