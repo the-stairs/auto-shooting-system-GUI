@@ -85,62 +85,68 @@ const SERIAL_DONE_REG = /^DONE\s+(CAM_HEIGHT|CAM_LOWER|TABLE_HEIGHT)=([\d.-]+)/;
 const SERIAL_DONE_ALL_REG = /^DONE_ALL\b(.*)?$/;
 const SERIAL_QUIT_REG = /^QUIT\b(.*)?$/;
 
-function handleSerialLine(line: string) {
-  const trimmed = line.trim();
-
-  // 종료 신호: QUIT
-  if (SERIAL_QUIT_REG.test(trimmed)) {
-    const state = getState();
-    if (state.exitPending) {
-      addLog(`종료 신호 수신: ${trimmed}`);
-      const ipc = getIpc();
-      ipc?.send?.("app:quit");
-    } else {
-      addLog(`QUIT 수신됐지만 exitPending 아님: ${trimmed}`);
-    }
-    return;
+/** 종료 신호: QUIT */
+function handleQuitLine(trimmed: string): boolean {
+  if (!SERIAL_QUIT_REG.test(trimmed)) return false;
+  const state = getState();
+  if (state.exitPending) {
+    addLog(`종료 신호 수신: ${trimmed}`);
+    getIpc()?.send?.("app:quit");
+  } else {
+    addLog(`QUIT 수신됐지만 exitPending 아님: ${trimmed}`);
   }
+  return true;
+}
 
-  // 단일 축 완료: DONE CAM_HEIGHT=123.4
+/** 단일 축 완료: DONE CAM_HEIGHT=123.4 */
+function handleDoneLine(trimmed: string): boolean {
   const doneMatch = trimmed.match(SERIAL_DONE_REG);
-  if (doneMatch) {
-    const [, key, value] = doneMatch;
-    const num = parseFloat(value);
-    if (!Number.isNaN(num) && getState().units[key]) {
-      updateUnit(key, { currentValue: num });
-    }
-    setAxisStatus(key, "done");
-
-    const units = getState().units;
-    const anyMoving = Object.values(units).some(
-      (u) => u.status === "moving"
-    );
-    if (!anyMoving) {
-      setState({ systemStatus: "ready" });
-      addLog(`모든 축 완료`);
-    } else {
-      addLog(`축 완료: ${trimmed}`);
-    }
-    return;
+  if (!doneMatch) return false;
+  const [, key, value] = doneMatch;
+  const num = parseFloat(value);
+  if (!Number.isNaN(num) && getState().units[key]) {
+    updateUnit(key, { currentValue: num });
   }
-
-  // 자동 운전 전체 완료: DONE_ALL ...
-  if (SERIAL_DONE_ALL_REG.test(trimmed)) {
-    resetAllAxisStatus("done");
+  setAxisStatus(key, "done");
+  const units = getState().units;
+  const anyMoving = Object.values(units).some((u) => u.status === "moving");
+  if (!anyMoving) {
     setState({ systemStatus: "ready" });
-    addLog(`전체 이동 완료: ${trimmed}`);
-    return;
+    addLog(`모든 축 완료`);
+  } else {
+    addLog(`축 완료: ${trimmed}`);
   }
+  return true;
+}
 
-  // 실시간 위치 값: CAM_HEIGHT=..., CAM_LOWER=..., TABLE_HEIGHT=...
+/** 자동 운전 전체 완료: DONE_ALL ... */
+function handleDoneAllLine(trimmed: string): boolean {
+  if (!SERIAL_DONE_ALL_REG.test(trimmed)) return false;
+  resetAllAxisStatus("done");
+  setState({ systemStatus: "ready" });
+  addLog(`전체 이동 완료: ${trimmed}`);
+  return true;
+}
+
+/** 실시간 위치 값: CAM_HEIGHT=..., CAM_LOWER=..., TABLE_HEIGHT=... */
+function handleValueLine(trimmed: string): boolean {
   const valueMatch = trimmed.match(SERIAL_VALUE_REG);
-  if (!valueMatch) return;
+  if (!valueMatch) return false;
   const [, key, value] = valueMatch;
   const num = parseFloat(value);
-  if (Number.isNaN(num)) return;
+  if (Number.isNaN(num)) return false;
   if (getState().units[key]) {
     updateUnit(key, { currentValue: num });
   }
+  return true;
+}
+
+function handleSerialLine(line: string) {
+  const trimmed = line.trim();
+  if (handleQuitLine(trimmed)) return;
+  if (handleDoneLine(trimmed)) return;
+  if (handleDoneAllLine(trimmed)) return;
+  handleValueLine(trimmed);
 }
 
 /**

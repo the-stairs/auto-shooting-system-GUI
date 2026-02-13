@@ -69,14 +69,13 @@ export function useActions() {
     }
   }, []);
 
-  const sendCommand = useCallback(async (cmd: string) => {
-    const s = getState();
-    if (!s.connected) {
-      addLog("연결되지 않음 - 명령 무시됨");
-      return;
-    }
-    addLog(`송신: ${cmd}`);
+  const sendCommand = useCallback(async (cmd: string, connected: boolean) => {
     try {
+      if (!connected) {
+        addLog("연결되지 않음 - 명령 무시됨");
+        throw new Error("연결되지 않음");
+      }
+      addLog(`송신: ${cmd}`);
       await ipcWriteSerial(cmd);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -84,58 +83,36 @@ export function useActions() {
     }
   }, []);
 
-  const initUnit = useCallback(async (key: string) => {
-    setAxisStatus(key, "moving");
-    const s = getState();
-    const label = s.units[key]?.label ?? key;
-    addLog(`${label} 초기화`);
-    if (s.connected) {
-      const cmd = `INIT_${key}`;
-      addLog(`송신: ${cmd}`);
-      try {
-        await ipcWriteSerial(cmd);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        addLog(`전송 실패: ${msg}`);
-      }
-    }
-  }, []);
+  const initUnit = useCallback(
+    async (key: string) => {
+      setAxisStatus(key, "moving");
+      const s = getState();
+      const label = s.units[key]?.label ?? key;
+      addLog(`${label} 초기화`);
+
+      await sendCommand(`INIT_${key}`, s.connected);
+    },
+    [sendCommand]
+  );
 
   const initAll = useCallback(async () => {
     resetAllAxisStatus("moving");
     addLog("전체 초기화");
     const s = getState();
-    if (s.connected) {
-      const cmd = "FULL_INIT";
-      addLog(`송신: ${cmd}`);
-      try {
-        await ipcWriteSerial(cmd);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        addLog(`전송 실패: ${msg}`);
-      }
-    }
-  }, []);
 
-  const sendUnitValue = useCallback(async (key: string) => {
-    const s = getState();
-    const unit = s.units[key];
-    if (!unit) return;
-    if (!unit.setValue && unit.setValue !== 0) {
-      addLog(`${unit.label} 값을 입력하세요`);
-      return;
-    }
-    const cmd = `${key}=${unit.setValue}`;
-    setAxisStatus(key, "moving");
-    setState({ systemStatus: "running" });
-    addLog(`송신: ${cmd}`);
-    try {
-      await ipcWriteSerial(cmd);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      addLog(`전송 실패: ${msg}`);
-    }
-  }, []);
+    await sendCommand("FULL_INIT", s.connected);
+  }, [sendCommand]);
+
+  const sendUnitValue = useCallback(
+    async (key: string) => {
+      const s = getState();
+      const cmd = `${key}=${s.units[key]?.setValue ?? 0}`;
+      setAxisStatus(key, "moving");
+      setState({ systemStatus: "running" });
+      await sendCommand(cmd, s.connected);
+    },
+    [sendCommand]
+  );
 
   const runAutoSequence = useCallback(async () => {
     const s = getState();
@@ -157,25 +134,16 @@ export function useActions() {
     setState({ systemStatus: "running" });
     addLog(`자동운전 시작: ${cmd}`);
 
-    try {
-      await ipcWriteSerial(cmd);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      addLog(`전송 실패: ${msg}`);
-    }
-  }, []);
+    await sendCommand(cmd, s.connected);
+  }, [sendCommand]);
 
   const emergencyStop = useCallback(async () => {
-    try {
-      await ipcWriteSerial("STOP");
-      resetAllAxisStatus("idle");
-      setState({ systemStatus: "stopped" });
-      addLog("긴급 정지!");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      addLog(`STOP 전송 실패: ${msg}`);
-    }
-  }, []);
+    const s = getState();
+    await sendCommand("STOP", s.connected);
+    resetAllAxisStatus("idle");
+    setState({ systemStatus: "stopped" });
+    addLog("긴급 정지!");
+  }, [sendCommand]);
 
   const quitApp = useCallback(async () => {
     const s = getState();
@@ -202,20 +170,11 @@ export function useActions() {
 
   const resetBoard = useCallback(async () => {
     const s = getState();
-    if (!s.connected) {
-      addLog("연결되지 않음 - RESET 명령 무시됨");
-      return;
-    }
-    try {
-      await ipcWriteSerial("RESET");
-      resetAllAxisStatus("idle");
-      setState({ systemStatus: "ready" });
-      addLog("보드 리셋 명령 전송");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      addLog(`RESET 전송 실패: ${msg}`);
-    }
-  }, []);
+    await sendCommand("RESET", s.connected);
+    resetAllAxisStatus("idle");
+    setState({ systemStatus: "ready" });
+    addLog("보드 리셋 명령 전송");
+  }, [sendCommand]);
 
   const setAutoOrder = useCallback((order: [string, string, string]) => {
     setState({ autoOrder: order });
