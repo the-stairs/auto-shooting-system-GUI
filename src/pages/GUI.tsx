@@ -5,6 +5,7 @@ import { StatusPanel } from "../components/StatusPannel";
 import { getState, initSerialListener, useActions } from "../lib/store";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
+import { AlertTriangle } from "lucide-react";
 
 const UNIT_KEYS = [
   { key: "CAM_HEIGHT", index: 1 },
@@ -74,11 +75,14 @@ export default function GUI() {
       {showQuitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-lg border border-border bg-card p-5 shadow-lg">
-            <p className="mb-5 text-sm text-foreground">
-              영점으로 이동한 후 앱이 종료됩니다.
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-destructive">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              프로그램 종료 안내
+            </h3>
+            <p className="my-5 text-balance text-sm text-muted-foreground">
+              확인을 누르면 원위치 복귀 후 종료 절차를 진행합니다.
               <br />
-              확인을 누르면 종료 절차를 진행합니다. 주변의 방해물이 없는지
-              확인해주세요.
+              주변의 방해물이 없는지 확인해주세요.
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowQuitModal(false)}>
