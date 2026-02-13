@@ -24,12 +24,20 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let win: BrowserWindow | null;
+let isQuitting = false;
 
 function createWindow() {
   win = new BrowserWindow({
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
     },
+  });
+
+  // 창 닫기(X) 클릭 시: 먼저 QUIT_HOME 전송 후 QUIT 수신 시에만 종료
+  win.on("close", (e) => {
+    if (isQuitting) return;
+    e.preventDefault();
+    win?.webContents.send("window-close-requested");
   });
 
   // Test active push message to Renderer-process.
@@ -66,5 +74,6 @@ app.on("activate", () => {
 app.whenReady().then(createWindow);
 
 ipcMain.on("app:quit", () => {
+  isQuitting = true;
   app.quit();
 });
