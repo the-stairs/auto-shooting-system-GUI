@@ -83,11 +83,24 @@ export async function ipcWriteSerial(data: string) {
 const SERIAL_VALUE_REG = /^(CAM_HEIGHT|CAM_LOWER|TABLE_HEIGHT)=([\d.-]+)/;
 const SERIAL_DONE_REG = /^DONE\s+(CAM_HEIGHT|CAM_LOWER|TABLE_HEIGHT)=([\d.-]+)/;
 const SERIAL_DONE_ALL_REG = /^DONE_ALL\b(.*)?$/;
+const SERIAL_DONE_STOP = /^DONE_STOP\b(.*)?$/;
 const SERIAL_QUIT_REG = /^QUIT\b(.*)?$/;
+
+function handleDoneStopLine(trimmed: string): boolean {
+  if (!SERIAL_DONE_STOP.test(trimmed)) {
+    return false;
+  }
+  resetAllAxisStatus("idle");
+  setState({ systemStatus: "ready" });
+  addLog(`긴급 정지 완료: ${trimmed}`);
+  return true;
+}
 
 /** 종료 신호: QUIT */
 function handleQuitLine(trimmed: string): boolean {
-  if (!SERIAL_QUIT_REG.test(trimmed)) return false;
+  if (!SERIAL_QUIT_REG.test(trimmed)) {
+    return false;
+  }
   const state = getState();
   if (state.exitPending) {
     addLog(`종료 신호 수신: ${trimmed}`);
@@ -101,7 +114,9 @@ function handleQuitLine(trimmed: string): boolean {
 /** 단일 축 완료: DONE CAM_HEIGHT=123.4 */
 function handleDoneLine(trimmed: string): boolean {
   const doneMatch = trimmed.match(SERIAL_DONE_REG);
-  if (!doneMatch) return false;
+  if (!doneMatch) {
+    return false;
+  }
   const [, key, value] = doneMatch;
   const num = parseFloat(value);
   if (!Number.isNaN(num) && getState().units[key]) {
@@ -111,7 +126,10 @@ function handleDoneLine(trimmed: string): boolean {
   const units = getState().units;
   const anyMoving = Object.values(units).some((u) => u.status === "moving");
   if (!anyMoving) {
-    setState({ systemStatus: "ready" });
+    const current = getState();
+    if (current.systemStatus !== "stopped") {
+      setState({ systemStatus: "ready" });
+    }
     addLog(`모든 축 완료`);
   } else {
     addLog(`축 완료: ${trimmed}`);
@@ -121,9 +139,14 @@ function handleDoneLine(trimmed: string): boolean {
 
 /** 자동 운전 전체 완료: DONE_ALL ... */
 function handleDoneAllLine(trimmed: string): boolean {
-  if (!SERIAL_DONE_ALL_REG.test(trimmed)) return false;
+  if (!SERIAL_DONE_ALL_REG.test(trimmed)) {
+    return false;
+  }
   resetAllAxisStatus("done");
-  setState({ systemStatus: "ready" });
+  const current = getState();
+  if (current.systemStatus !== "stopped") {
+    setState({ systemStatus: "ready" });
+  }
   addLog(`전체 이동 완료: ${trimmed}`);
   return true;
 }
@@ -131,10 +154,14 @@ function handleDoneAllLine(trimmed: string): boolean {
 /** 실시간 위치 값: CAM_HEIGHT=..., CAM_LOWER=..., TABLE_HEIGHT=... */
 function handleValueLine(trimmed: string): boolean {
   const valueMatch = trimmed.match(SERIAL_VALUE_REG);
-  if (!valueMatch) return false;
+  if (!valueMatch) {
+    return false;
+  }
   const [, key, value] = valueMatch;
   const num = parseFloat(value);
-  if (Number.isNaN(num)) return false;
+  if (Number.isNaN(num)) {
+    return false;
+  }
   if (getState().units[key]) {
     updateUnit(key, { currentValue: num });
   }
@@ -144,6 +171,7 @@ function handleValueLine(trimmed: string): boolean {
 function handleSerialLine(line: string) {
   const trimmed = line.trim();
   if (handleQuitLine(trimmed)) return;
+  if (handleDoneStopLine(trimmed)) return; // DONE_STOP을 DONE보다 먼저 처리
   if (handleDoneLine(trimmed)) return;
   if (handleDoneAllLine(trimmed)) return;
   handleValueLine(trimmed);
