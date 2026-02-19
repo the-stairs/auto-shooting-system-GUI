@@ -105,17 +105,8 @@ function handleDoneLine(trimmed: string): boolean {
     updateUnit(key, { currentValue: num });
   }
   setAxisStatus(key, "done");
-  const units = getState().units;
-  const anyMoving = Object.values(units).some((u) => u.status === "moving");
-  if (!anyMoving) {
-    const current = getState();
-    if (current.systemStatus !== "stopped") {
-      setState({ systemStatus: "ready" });
-    }
-    addLog(`모든 축 완료`);
-  } else {
-    addLog(`축 완료: ${trimmed}`);
-  }
+  addLog(`축 이동 완료: ${trimmed}`);
+
   return true;
 }
 
