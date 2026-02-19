@@ -88,6 +88,7 @@ export function useActions() {
           throw new Error("연결되지 않음");
         }
         setAxisStatus(key, "moving");
+        setState({ systemStatus: "running" });
         const label = s.units[key]?.label ?? key;
         addLog(`${label} 초기화`);
         await sendCommand(`INIT_${key}`);
@@ -107,6 +108,7 @@ export function useActions() {
         throw new Error("연결되지 않음");
       }
       resetAllAxisStatus("moving");
+      setState({ systemStatus: "running" });
       addLog("전체 초기화");
       await sendCommand("FULL_INIT");
     } catch (e) {
