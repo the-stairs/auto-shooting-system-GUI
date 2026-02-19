@@ -204,23 +204,6 @@ export function useActions() {
     }
   }, []);
 
-  const resetBoard = useCallback(async () => {
-    try {
-      const s = getState();
-      if (!s.connected) {
-        addLog("연결되지 않음 - 명령 무시됨");
-        throw new Error("연결되지 않음");
-      }
-      resetAllAxisStatus("idle");
-      setState({ systemStatus: "ready" });
-      addLog("보드 리셋 명령 전송");
-      await sendCommand("RESET");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      addLog(`보드 리셋 명령 전송 실패: ${msg}`);
-    }
-  }, [sendCommand]);
-
   const setAutoOrder = useCallback((order: [string, string, string]) => {
     setState({ autoOrder: order });
   }, []);
@@ -276,7 +259,6 @@ export function useActions() {
     runAutoSequence,
     emergencyStop,
     quitApp,
-    resetBoard,
     setAutoOrder,
     saveSettings,
     loadSettings,

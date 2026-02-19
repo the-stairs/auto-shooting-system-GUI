@@ -17,7 +17,6 @@ import {
   Download,
   Upload,
   FileText,
-  RefreshCcw,
 } from "lucide-react";
 
 const AUTO_ORDER_KEYS = ["CAM_HEIGHT", "CAM_LOWER", "TABLE_HEIGHT"] as const;
@@ -45,15 +44,6 @@ export function TopBar() {
     e.target.value = "";
   };
 
-  const handleResetBoard = () => {
-    const ok = window.confirm(
-      "보드를 리셋하시겠습니까?\n(모든 축 동작이 중단되고 보드가 재시작됩니다)"
-    );
-    if (ok) {
-      actions.resetBoard();
-    }
-  };
-
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3">
       {/* Action Buttons */}
@@ -75,16 +65,6 @@ export function TopBar() {
         >
           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
           전체초기화
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleResetBoard}
-          disabled={!state.connected}
-          className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent"
-        >
-          <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />
-          보드 리셋
         </Button>
       </div>
 
