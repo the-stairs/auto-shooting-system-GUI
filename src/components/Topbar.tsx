@@ -32,6 +32,15 @@ export function TopBar() {
   const actions = useActions();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleAutoOrderClick = () => {
+    const [k1, k2, k3] = state.autoOrder;
+    if (k1 === k2 || k2 === k3 || k1 === k3) {
+      alert("자동운전 순서에서 축을 중복 선택할 수 없습니다");
+      return;
+    }
+    actions.runAutoSequence();
+  };
+
   const handleLoadClick = () => {
     fileInputRef.current?.click();
   };
@@ -50,7 +59,7 @@ export function TopBar() {
       <div className="flex items-center gap-2">
         <Button
           size="sm"
-          onClick={actions.runAutoSequence}
+          onClick={handleAutoOrderClick}
           disabled={!state.connected || state.systemStatus === "running"}
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
