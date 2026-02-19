@@ -31,6 +31,10 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
     },
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
   });
 
   // 창 닫기(X) 클릭 시: 먼저 QUIT_HOME 전송 후 QUIT 수신 시에만 종료
