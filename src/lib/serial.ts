@@ -7,26 +7,8 @@ import {
   resetAllAxisStatus,
 } from "./state";
 
-// --- IPC Helpers ---
-
-type IpcLike = {
-  connectSerial?: (path: string) => Promise<{ ok: boolean; error?: string }>;
-  disconnectSerial?: () => Promise<{ ok: boolean; error?: string }>;
-  listSerialPorts?: () => Promise<{ path: string }[]>;
-  writeSerial?: (data: string) => Promise<{ ok: boolean; error?: string }>;
-  on?: (
-    channel: string,
-    listener: (event: unknown, data: string) => void
-  ) => void;
-  off?: (
-    channel: string,
-    listener: (event: unknown, data: string) => void
-  ) => void;
-  send?: (channel: string, ...args: unknown[]) => void;
-};
-
-function getIpc(): IpcLike | undefined {
-  return (window as unknown as { ipcRenderer?: IpcLike }).ipcRenderer;
+function getIpc(): Window["ipcRenderer"] {
+  return window.ipcRenderer;
 }
 
 export async function ipcConnectSerial(path: string) {
