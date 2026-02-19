@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { TopBar } from "../components/Topbar";
-import { UnitPanel } from "../components/UnitPannel";
-import { StatusPanel } from "../components/StatusPannel";
+import { UnitPanel } from "../components/UnitPanel";
+import { StatusPanel } from "../components/StatusPanel";
 import { getState, initSerialListener, useActions } from "../lib/store";
 import { Header } from "@/components/Header";
 import QuitModal from "@/components/QuitModal";
