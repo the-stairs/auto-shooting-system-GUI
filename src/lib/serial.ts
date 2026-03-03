@@ -65,11 +65,11 @@ export async function ipcWriteSerial(data: string) {
 const SERIAL_VALUE_REG = /^(CAM_HEIGHT|CAM_LOWER|TABLE_HEIGHT)=([\d.-]+)/;
 const SERIAL_DONE_REG = /^DONE\s+(CAM_HEIGHT|CAM_LOWER|TABLE_HEIGHT)=([\d.-]+)/;
 const SERIAL_DONE_ALL_REG = /^DONE_ALL\b(.*)?$/;
-const SERIAL_DONE_STOP = /^DONE_STOP\b(.*)?$/;
-const SERIAL_QUIT_REG = /^QUIT\b(.*)?$/;
+const SERIAL_DONE_STOP_REG = /^DONE_STOP\b(.*)?$/;
+const SERIAL_DONE_SAVE_REG = /^DONE_SAVE\b(.*)?$/;
 
 function handleDoneStopLine(trimmed: string): boolean {
-  if (!SERIAL_DONE_STOP.test(trimmed)) {
+  if (!SERIAL_DONE_STOP_REG.test(trimmed)) {
     return false;
   }
   resetAllAxisStatus("idle");
@@ -78,17 +78,17 @@ function handleDoneStopLine(trimmed: string): boolean {
   return true;
 }
 
-/** 종료 신호: QUIT */
-function handleQuitLine(trimmed: string): boolean {
-  if (!SERIAL_QUIT_REG.test(trimmed)) {
+/** 저장 완료 신호: QUIT */
+function handleDoneSaveLine(trimmed: string): boolean {
+  if (!SERIAL_DONE_SAVE_REG.test(trimmed)) {
     return false;
   }
   const state = getState();
   if (state.exitPending) {
-    addLog(`종료 신호 수신: ${trimmed}`);
+    addLog(`DONE_SAVE 신호 수신: ${trimmed}`);
     getIpc()?.send?.("app:quit");
   } else {
-    addLog(`QUIT 수신됐지만 exitPending 아님: ${trimmed}`);
+    addLog(`DONE_SAVE 수신됐지만 exitPending 아님: ${trimmed}`);
   }
   return true;
 }
@@ -152,7 +152,7 @@ function handleValueLine(trimmed: string): boolean {
 
 function handleSerialLine(line: string) {
   const trimmed = line.trim();
-  if (handleQuitLine(trimmed)) return;
+  if (handleDoneSaveLine(trimmed)) return;
   if (handleDoneStopLine(trimmed)) return; // DONE_STOP을 DONE보다 먼저 처리
   if (handleDoneLine(trimmed)) return;
   if (handleDoneAllLine(trimmed)) return;

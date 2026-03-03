@@ -197,11 +197,11 @@ export function useActions() {
     }
     try {
       setState({ exitPending: true });
-      addLog("종료 요청: QUIT_HOME 전송");
-      await ipcWriteSerial("QUIT_HOME");
+      addLog("종료 요청: SAVE 전송");
+      await ipcWriteSerial("SAVE");
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      addLog(`QUIT_HOME 전송 실패: ${msg}`);
+      addLog(`SAVE 전송 실패: ${msg}`);
       setState({ exitPending: false });
     }
   }, []);

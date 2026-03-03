@@ -18,9 +18,7 @@ export default function QuitModal({
           프로그램 종료 안내
         </h3>
         <p className="my-5 text-balance text-sm text-muted-foreground">
-          확인을 누르면 원위치 복귀 후 종료 절차를 진행합니다.
-          <br />
-          주변의 방해물이 없는지 확인해주세요.
+          확인을 누르면 현재 위치를 저장 후 종료합니다.
         </p>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setShowQuitModal(false)}>
