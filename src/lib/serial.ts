@@ -67,6 +67,9 @@ const SERIAL_DONE_REG = /^DONE\s+(CAM_HEIGHT|CAM_LOWER|TABLE_HEIGHT)=([\d.-]+)/;
 const SERIAL_DONE_ALL_REG = /^DONE_ALL\b(.*)?$/;
 const SERIAL_DONE_STOP_REG = /^DONE_STOP\b(.*)?$/;
 const SERIAL_DONE_SAVE_REG = /^DONE_SAVE\b(.*)?$/;
+const SERIAL_DONE_START_REG = /^DONE_START\b(.*)?$/;
+const SERIAL_START_REG =
+  /^START=(CAM_HEIGHT):([\d.-]+)\/(CAM_LOWER):([\d.-]+)\/(TABLE_HEIGHT):([\d.-]+)/;
 
 function handleDoneStopLine(trimmed: string): boolean {
   if (!SERIAL_DONE_STOP_REG.test(trimmed)) {
@@ -75,6 +78,33 @@ function handleDoneStopLine(trimmed: string): boolean {
   resetAllAxisStatus("idle");
   setState({ systemStatus: "ready" });
   addLog(`긴급 정지 완료: ${trimmed}`);
+  return true;
+}
+
+/** 초기 위치 수신: START=CAM_HEIGHT:x/CAM_LOWER:y/TABLE_HEIGHT:z */
+function handleStartLine(trimmed: string): boolean {
+  const match = trimmed.match(SERIAL_START_REG);
+  if (!match) return false;
+  const [, k1, v1, k2, v2, k3, v3] = match;
+  const pairs: [string, number][] = [
+    [k1, parseFloat(v1)],
+    [k2, parseFloat(v2)],
+    [k3, parseFloat(v3)],
+  ];
+  for (const [key, value] of pairs) {
+    if (!Number.isNaN(value) && getState().units[key]) {
+      updateUnit(key, { currentValue: value, setValue: value });
+    }
+  }
+  addLog(`초기 위치 수신: ${trimmed}`);
+  return true;
+}
+
+/** 시작 완료 신호: DONE_START */
+function handleDoneStartLine(trimmed: string): boolean {
+  if (!SERIAL_DONE_START_REG.test(trimmed)) return false;
+  setState({ startupLoading: false });
+  addLog(`시작 완료: ${trimmed}`);
   return true;
 }
 
@@ -153,7 +183,9 @@ function handleValueLine(trimmed: string): boolean {
 function handleSerialLine(line: string) {
   const trimmed = line.trim();
   if (handleDoneSaveLine(trimmed)) return;
+  if (handleDoneStartLine(trimmed)) return;
   if (handleDoneStopLine(trimmed)) return; // DONE_STOP을 DONE보다 먼저 처리
+  if (handleStartLine(trimmed)) return;
   if (handleDoneLine(trimmed)) return;
   if (handleDoneAllLine(trimmed)) return;
   handleValueLine(trimmed);

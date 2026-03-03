@@ -31,11 +31,19 @@ export function useActions() {
   const connect = useCallback(async (port: string) => {
     try {
       await ipcConnectSerial(port);
-      setState({ connected: true, selectedPort: port, systemStatus: "ready" });
+      setState({
+        connected: true,
+        selectedPort: port,
+        systemStatus: "ready",
+        startupLoading: true,
+      });
       addLog(`포트 ${port} 연결됨`);
+      addLog("송신: START");
+      await ipcWriteSerial("START");
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       addLog(`연결 실패: ${msg}`);
+      setState({ startupLoading: false });
     }
   }, []);
 
@@ -47,6 +55,7 @@ export function useActions() {
         selectedPort: "",
         systemStatus: "ready",
         exitPending: false,
+        startupLoading: false,
       });
       addLog("연결 해제됨");
     } catch (e) {

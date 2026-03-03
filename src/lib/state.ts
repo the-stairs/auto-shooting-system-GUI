@@ -21,6 +21,7 @@ export interface AppState {
   systemStatus: "ready" | "running" | "stopped" | "error";
   logs: string[];
   exitPending?: boolean;
+  startupLoading?: boolean;
 }
 
 // --- Initial state ---
@@ -62,6 +63,7 @@ const initialState: AppState = {
   systemStatus: "ready",
   logs: [],
   exitPending: false,
+  startupLoading: false,
 };
 
 // --- Store core ---
@@ -132,5 +134,3 @@ export function resetAllAxisStatus(status: AxisStatus = "idle") {
   };
   emitChange();
 }
-
-

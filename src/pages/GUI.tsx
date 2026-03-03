@@ -2,9 +2,15 @@ import { useEffect, useState } from "react";
 import { TopBar } from "../components/Topbar";
 import { UnitPanel } from "../components/UnitPanel";
 import { StatusPanel } from "../components/StatusPanel";
-import { getState, initSerialListener, useActions } from "../lib/store";
+import {
+  getState,
+  initSerialListener,
+  useActions,
+  useAppState,
+} from "../lib/store";
 import { Header } from "@/components/Header";
 import AlertModal from "@/components/AlertModal";
+import Loading from "@/components/Loading";
 
 const UNIT_KEYS = [
   { key: "CAM_HEIGHT", index: 1 },
@@ -13,8 +19,9 @@ const UNIT_KEYS = [
 ];
 
 export default function GUI() {
+  const state = useAppState();
   const actions = useActions();
-  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState<boolean>(false);
 
   useEffect(() => {
     const cleanup = initSerialListener();
@@ -43,35 +50,46 @@ export default function GUI() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-background">
-      {/* Header */}
-      <Header />
-
-      {/* Top Bar Controls */}
-      <TopBar />
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto p-5">
-        <div className="grid h-full grid-cols-1 gap-5 lg:grid-cols-2">
-          {/* Unit Panels */}
-          {UNIT_KEYS.map(({ key, index }) => (
-            <UnitPanel key={key} unitKey={key} index={index} />
-          ))}
-
-          {/* System Status */}
-          <StatusPanel />
-        </div>
-      </main>
-
-      {/* 창 닫기 시: 영점 이동 후 종료 안내 모달 */}
-      {showAlertModal && (
-        <AlertModal
-          title="프로그램 종료 안내"
-          message="확인을 누르면 현재 위치를 저장 후 종료합니다."
-          setIsOpen={setShowAlertModal}
-          handleConfirm={handleSaveAndQuitConfirm}
+    <>
+      {(state.startupLoading || state.exitPending) && (
+        <Loading
+          message={
+            state.exitPending
+              ? "현재 위치를 저장 중..."
+              : "이전 위치를 불러오는 중..."
+          }
         />
       )}
-    </div>
+      <div className="flex h-screen flex-col bg-background">
+        {/* Header */}
+        <Header />
+
+        {/* Top Bar Controls */}
+        <TopBar />
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto p-5">
+          <div className="grid h-full grid-cols-1 gap-5 lg:grid-cols-2">
+            {/* Unit Panels */}
+            {UNIT_KEYS.map(({ key, index }) => (
+              <UnitPanel key={key} unitKey={key} index={index} />
+            ))}
+
+            {/* System Status */}
+            <StatusPanel />
+          </div>
+        </main>
+
+        {/* 창 닫기 시: 영점 이동 후 종료 안내 모달 */}
+        {showAlertModal && (
+          <AlertModal
+            title="프로그램 종료 안내"
+            message="확인을 누르면 현재 위치를 저장 후 종료합니다."
+            setIsOpen={setShowAlertModal}
+            handleConfirm={handleSaveAndQuitConfirm}
+          />
+        )}
+      </div>
+    </>
   );
 }
