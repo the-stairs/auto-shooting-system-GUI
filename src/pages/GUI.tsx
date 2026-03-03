@@ -4,7 +4,7 @@ import { UnitPanel } from "../components/UnitPanel";
 import { StatusPanel } from "../components/StatusPanel";
 import { getState, initSerialListener, useActions } from "../lib/store";
 import { Header } from "@/components/Header";
-import QuitModal from "@/components/QuitModal";
+import AlertModal from "@/components/AlertModal";
 
 const UNIT_KEYS = [
   { key: "CAM_HEIGHT", index: 1 },
@@ -14,7 +14,7 @@ const UNIT_KEYS = [
 
 export default function GUI() {
   const actions = useActions();
-  const [showQuitModal, setShowQuitModal] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState(false);
 
   useEffect(() => {
     const cleanup = initSerialListener();
@@ -31,14 +31,14 @@ export default function GUI() {
         actions.quitApp();
         return;
       }
-      setShowQuitModal(true);
+      setShowAlertModal(true);
     };
     ipc.on("window-close-requested", handler);
     return () => void ipc.off?.("window-close-requested", handler);
   }, [actions.quitApp]);
 
-  const handleQuitConfirm = () => {
-    setShowQuitModal(false);
+  const handleSaveAndQuitConfirm = () => {
+    setShowAlertModal(false);
     actions.quitApp();
   };
 
@@ -64,10 +64,12 @@ export default function GUI() {
       </main>
 
       {/* 창 닫기 시: 영점 이동 후 종료 안내 모달 */}
-      {showQuitModal && (
-        <QuitModal
-          setShowQuitModal={setShowQuitModal}
-          handleQuitConfirm={handleQuitConfirm}
+      {showAlertModal && (
+        <AlertModal
+          title="프로그램 종료 안내"
+          message="확인을 누르면 현재 위치를 저장 후 종료합니다."
+          setIsOpen={setShowAlertModal}
+          handleConfirm={handleSaveAndQuitConfirm}
         />
       )}
     </div>
