@@ -17,6 +17,7 @@ import {
   Download,
   Upload,
   FileText,
+  LogOut,
 } from "lucide-react";
 import AlertModal from "./AlertModal";
 
@@ -183,8 +184,9 @@ export function TopBar() {
 
         {/* File Operations */}
         <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">프리셋:</span>
           <Button size="sm" variant="ghost" onClick={handleLoadClick}>
-            <Upload className="mr-1.5 h-3.5 w-3.5" />
+            <Download className="mr-1.5 h-3.5 w-3.5" />
             불러오기
           </Button>
           <input
@@ -195,8 +197,8 @@ export function TopBar() {
             onChange={handleFileChange}
           />
           <Button size="sm" variant="ghost" onClick={actions.saveSettings}>
-            <Download className="mr-1.5 h-3.5 w-3.5" />
-            저장
+            <Upload className="mr-1.5 h-3.5 w-3.5" />
+            내보내기
           </Button>
           {state.fileName && (
             <span className="flex items-center gap-1 text-xs text-primary">
@@ -205,6 +207,23 @@ export function TopBar() {
             </span>
           )}
         </div>
+
+        {/* Separator */}
+        <div className="h-6 w-px bg-border" />
+
+        <Button
+          className="ml-auto"
+          size="sm"
+          variant="destructive"
+          onClick={actions.quitApp}
+          disabled={
+            state.exitPending ||
+            !state.connected ||
+            state.systemStatus === "running"
+          }
+        >
+          <LogOut className="mr-1.5 h-3.5 w-3.5" />현 위치 저장 후 종료
+        </Button>
       </div>
       {showAlertModal && (
         <AlertModal

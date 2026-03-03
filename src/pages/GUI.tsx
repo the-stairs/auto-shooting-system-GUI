@@ -80,6 +80,13 @@ export default function GUI() {
           </div>
         </main>
 
+        {/* Footer 안내문구 */}
+        <footer className="border-t border-border bg-card px-5 py-2">
+          <p className="text-center text-md text-muted-foreground font-bold">
+            * 포트 연결 해제 시 현재 위치가 저장되지 않습니다.
+          </p>
+        </footer>
+
         {/* 창 닫기 시: 영점 이동 후 종료 안내 모달 */}
         {showAlertModal && (
           <AlertModal
