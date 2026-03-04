@@ -21,7 +21,7 @@ export default function AlertModal({
           <AlertTriangle className="h-4 w-4 text-destructive" />
           {title}
         </h3>
-        <p className="my-5 text-balance text-sm text-muted-foreground">
+        <p className="my-5 whitespace-pre-line text-balance text-sm text-muted-foreground">
           {message}
         </p>
         <div className="flex justify-end gap-2">

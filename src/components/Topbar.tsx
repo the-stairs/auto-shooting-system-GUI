@@ -222,7 +222,8 @@ export function TopBar() {
             state.systemStatus === "running"
           }
         >
-          <LogOut className="mr-1.5 h-3.5 w-3.5" />현 위치 저장 후 종료
+          <LogOut className="mr-1.5 h-3.5 w-3.5" />
+          프로그램 종료
         </Button>
       </div>
       {showAlertModal && (

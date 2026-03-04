@@ -91,7 +91,7 @@ export default function GUI() {
         {showAlertModal && (
           <AlertModal
             title="프로그램 종료 안내"
-            message="확인을 누르면 현재 위치를 저장 후 종료합니다."
+            message={"프로그램을 종료하시겠습니까?\n확인을 누르면 현재 위치를 저장 후 종료합니다."}
             setIsOpen={setShowAlertModal}
             handleConfirm={handleSaveAndQuitConfirm}
           />
