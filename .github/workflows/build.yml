@@ -1,0 +1,45 @@
+# Electron 앱 빌드 (Windows NSIS)
+# - main 브랜치 push 시: 빌드 후 Artifacts 업로드
+# - 태그 v* push 시: 빌드 후 GitHub Releases에 자동 배포 (자동 업데이트용)
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (Vite + Electron Builder)
+        run: |
+          if ("${{ github.ref }}" -match "refs/tags/") {
+            npm run build:publish
+          } else {
+            npm run build
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows installer (Artifact)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-Setup-${{ github.ref_name }}-${{ github.sha }}
+          path: |
+            release/*/*.exe
+            release/*/win-unpacked

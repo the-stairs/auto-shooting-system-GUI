@@ -4,6 +4,12 @@
   appId: "YourAppID",
   asar: true,
   productName: "auto-shooting-system-gui",
+  // 자동 업데이트: GitHub Releases에 빌드가 올라가야 앱이 업데이트를 찾을 수 있음
+  publish: {
+    provider: "github",
+    owner: "YOUR_GITHUB_USERNAME",
+    repo: "auto-shooting-system-GUI",
+  },
   directories: {
     output: "release/${version}",
   },
