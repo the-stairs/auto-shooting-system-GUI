@@ -51,14 +51,12 @@ export default function GUI() {
       <TopBar />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-5">
-        <div className="grid h-full grid-cols-1 gap-5 lg:grid-cols-2">
-          {/* Unit Panels */}
+      <main className="flex-1 min-h-0 overflow-auto p-5">
+        <div className="grid h-full min-h-0 grid-cols-1 grid-rows-4 gap-5 lg:grid-cols-2 lg:grid-rows-2">
+          {/* Unit Panels + Status: 4칸 동일 높이 */}
           {UNIT_KEYS.map(({ key, index }) => (
             <UnitPanel key={key} unitKey={key} index={index} />
           ))}
-
-          {/* System Status */}
           <StatusPanel />
         </div>
       </main>

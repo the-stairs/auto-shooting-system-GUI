@@ -31,7 +31,7 @@ export function UnitPanel({ unitKey, index }: UnitPanelProps) {
   };
 
   return (
-    <Card className="relative border-border bg-card">
+    <Card className="relative flex h-full min-h-0 flex-col border-border bg-card">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-xs font-bold text-primary-foreground">

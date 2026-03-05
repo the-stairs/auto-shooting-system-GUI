@@ -47,14 +47,14 @@ export function StatusPanel() {
   const StatusIcon = config.icon;
 
   return (
-    <Card className="flex h-full flex-col border-border bg-card">
+    <Card className="flex h-full min-h-0 flex-col border-border bg-card">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Activity className="h-4 w-4 text-primary" />
           System Status
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-4">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
         {/* Status Display */}
         <div
           className={`flex items-center justify-center gap-3 rounded-lg p-4 ${config.bgColor}`}
@@ -106,14 +106,14 @@ export function StatusPanel() {
           </div>
         </div>
 
-        {/* Log Area */}
-        <div className="flex max-h-64 flex-col overflow-hidden rounded-md border border-border">
-          <div className="border-b border-border bg-muted px-3 py-1.5">
+        {/* Log Area: 남은 높이만 사용, 패널 밖으로 넘치지 않음 */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border">
+          <div className="shrink-0 border-b border-border bg-muted px-3 py-1.5">
             <span className="text-xs font-medium text-muted-foreground">
               Activity Log
             </span>
           </div>
-          <ScrollArea className="flex-1 p-2">
+          <ScrollArea className="min-h-0 flex-1 p-2">
             <div className="flex flex-col gap-0.5">
               {state.logs.length === 0 ? (
                 <p className="py-4 text-center text-xs text-muted-foreground">
