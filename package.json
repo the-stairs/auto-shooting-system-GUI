@@ -56,6 +56,9 @@
   "main": "dist-electron/main.cjs",
   "build": {
     "appId": "com.the-stairs.auto-shooting-system-gui",
+    "directories": {
+      "output": "release/${version}"
+    },
     "publish": {
       "provider": "github",
       "owner": "the-stairs",
