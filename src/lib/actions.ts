@@ -28,24 +28,31 @@ export function useUnit(key: string) {
 }
 
 export function useActions() {
-  const connect = useCallback(async (port: string) => {
-    try {
-      await ipcConnectSerial(port);
-      setState({
-        connected: true,
-        selectedPort: port,
-        systemStatus: "ready",
-        startupLoading: true,
-      });
-      addLog(`포트 ${port} 연결됨`);
-      addLog("송신: START");
-      await ipcWriteSerial("START");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      addLog(`연결 실패: ${msg}`);
-      setState({ startupLoading: false });
-    }
+  const sendCommand = useCallback(async (cmd: string) => {
+    addLog(`송신: ${cmd}`);
+    await ipcWriteSerial(cmd);
   }, []);
+
+  const connect = useCallback(
+    async (port: string) => {
+      try {
+        await ipcConnectSerial(port);
+        setState({
+          connected: true,
+          selectedPort: port,
+          systemStatus: "running",
+        });
+        addLog(`포트 ${port} 연결됨`);
+        setTimeout(() => {
+          void sendCommand("START");
+        }, 1000);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        addLog(`연결 실패: ${msg}`);
+      }
+    },
+    [sendCommand]
+  );
 
   const disconnect = useCallback(async () => {
     try {
@@ -81,11 +88,6 @@ export function useActions() {
       addLog(`포트 목록 조회 실패: ${msg}`);
       setState({ ports: [] });
     }
-  }, []);
-
-  const sendCommand = useCallback(async (cmd: string) => {
-    addLog(`송신: ${cmd}`);
-    await ipcWriteSerial(cmd);
   }, []);
 
   const initUnit = useCallback(
@@ -206,14 +208,13 @@ export function useActions() {
     }
     try {
       setState({ exitPending: true });
-      addLog("종료 요청: SAVE 전송");
-      await ipcWriteSerial("SAVE");
+      await sendCommand("SAVE");
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       addLog(`SAVE 전송 실패: ${msg}`);
       setState({ exitPending: false });
     }
-  }, []);
+  }, [sendCommand]);
 
   const setAutoOrder = useCallback((order: [string, string, string]) => {
     setState({ autoOrder: order });

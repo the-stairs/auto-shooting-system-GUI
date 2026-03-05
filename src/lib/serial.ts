@@ -81,10 +81,11 @@ function handleDoneStopLine(trimmed: string): boolean {
   return true;
 }
 
-/** 초기 위치 수신: START=CAM_HEIGHT:x/CAM_LOWER:y/TABLE_HEIGHT:z */
+/** 초기 위치 수신: START=CAM_HEIGHT:x/CAM_LOWER:y/TABLE_HEIGHT:z (같은 줄에 DONE_START 붙을 수 있음) */
 function handleStartLine(trimmed: string): boolean {
   const match = trimmed.match(SERIAL_START_REG);
   if (!match) return false;
+  addLog(`초기 위치 수신: ${trimmed}`);
   const [, k1, v1, k2, v2, k3, v3] = match;
   const pairs: [string, number][] = [
     [k1, parseFloat(v1)],
@@ -96,14 +97,13 @@ function handleStartLine(trimmed: string): boolean {
       updateUnit(key, { currentValue: value, setValue: value });
     }
   }
-  addLog(`초기 위치 수신: ${trimmed}`);
   return true;
 }
 
 /** 시작 완료 신호: DONE_START */
 function handleDoneStartLine(trimmed: string): boolean {
   if (!SERIAL_DONE_START_REG.test(trimmed)) return false;
-  setState({ startupLoading: false });
+  setState({ systemStatus: "ready" });
   addLog(`시작 완료: ${trimmed}`);
   return true;
 }
@@ -197,7 +197,9 @@ function handleSerialLine(line: string) {
 export function initSerialListener(): () => void {
   const ipc = getIpc();
   if (!ipc?.on) return () => {};
-  const handler = (_: unknown, line: string) => handleSerialLine(line.trim());
+  const handler = (_: unknown, line: string) => {
+    return handleSerialLine(line.trim());
+  };
   ipc.on("serial:data", handler);
   return () => {
     ipc?.off?.("serial:data", handler);

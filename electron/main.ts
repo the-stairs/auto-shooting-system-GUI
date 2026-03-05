@@ -109,7 +109,8 @@ ipcMain.on("app:quit", () => {
 
 ipcMain.handle("update:check", () => {
   if (!app.isPackaged) return Promise.resolve();
-  return autoUpdater.checkForUpdates()
+  return autoUpdater
+    .checkForUpdates()
     .then((r) => r?.updateInfo?.version ?? null)
     .catch(() => null);
 });
