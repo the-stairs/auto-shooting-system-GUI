@@ -101,8 +101,16 @@ export function updateUnit(key: string, updates: Partial<UnitState>) {
   emitChange();
 }
 
+function formatLogDate(d: Date): string {
+  const y = d.getFullYear().toString().slice(-2);
+  const m = (d.getMonth() + 1).toString().padStart(2, "0");
+  const day = d.getDate().toString().padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function addLog(message: string) {
-  const timestamp = new Date().toLocaleTimeString("ko-KR", { hour12: false });
+  const now = new Date();
+  const timestamp = `${formatLogDate(now)} ${now.toLocaleTimeString("ko-KR", { hour12: false })}`;
   state = {
     ...state,
     logs: [`[${timestamp}] ${message}`, ...state.logs].slice(0, 100),
