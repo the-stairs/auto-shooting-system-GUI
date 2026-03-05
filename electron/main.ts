@@ -85,6 +85,12 @@ function setupAutoUpdater() {
   // 개발 중이거나 패키징되지 않은 경우 업데이트 검사 생략
   if (!app.isPackaged) return;
 
+  // GitHub 406 방지: User-Agent와 API용 Accept 헤더 설정
+  autoUpdater.requestHeaders = {
+    "User-Agent": "auto-shooting-system-gui",
+    Accept: "application/vnd.github.v3+json",
+  };
+
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 

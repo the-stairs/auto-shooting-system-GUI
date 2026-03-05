@@ -2,6 +2,10 @@
   "name": "auto-shooting-system-gui",
   "private": true,
   "version": "1.1.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/the-stairs/auto-shooting-system-GUI.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
@@ -49,5 +53,13 @@
     "vite-plugin-electron": "^0.28.6",
     "vite-plugin-electron-renderer": "^0.14.5"
   },
-  "main": "dist-electron/main.cjs"
+  "main": "dist-electron/main.cjs",
+  "build": {
+    "appId": "com.the-stairs.auto-shooting-system-gui",
+    "publish": {
+      "provider": "github",
+      "owner": "the-stairs",
+      "repo": "auto-shooting-system-GUI"
+    }
+  }
 }
