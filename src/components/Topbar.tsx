@@ -31,6 +31,7 @@ const DISPLAY_NAMES: Record<string, string> = {
 
 export function TopBar() {
   const [showAlertModal, setShowAlertModal] = useState<boolean>(false);
+  const [showQuitModal, setShowQuitModal] = useState<boolean>(false);
   const state = useAppState();
   const actions = useActions();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,6 +60,11 @@ export function TopBar() {
   const handleFullInitConfirm = () => {
     setShowAlertModal(false);
     actions.initAll();
+  };
+
+  const handleQuitConfirm = () => {
+    setShowQuitModal(false);
+    actions.quitApp();
   };
 
   return (
@@ -215,7 +221,7 @@ export function TopBar() {
           className="ml-auto"
           size="sm"
           variant="destructive"
-          onClick={actions.quitApp}
+          onClick={() => setShowQuitModal(true)}
           disabled={
             state.exitPending ||
             !state.connected ||
@@ -229,9 +235,17 @@ export function TopBar() {
       {showAlertModal && (
         <AlertModal
           title="전체 초기화 안내"
-          message="확인을 누르면 모든 축이 동시에 영점으로 이동합니다.\n주변 장애물이 없는지 확인하셨나요?"
+          message="확인을 누르면 모든 축이 동시에 영점으로 이동합니다. 주변 장애물이 없는지 확인하셨나요?"
           setIsOpen={setShowAlertModal}
           handleConfirm={handleFullInitConfirm}
+        />
+      )}
+      {showQuitModal && (
+        <AlertModal
+          title="프로그램 종료 안내"
+          message="프로그램을 종료하시겠습니까?\n확인을 누르면 현재 위치를 저장 후 종료합니다."
+          setIsOpen={setShowQuitModal}
+          handleConfirm={handleQuitConfirm}
         />
       )}
     </>
